@@ -1,0 +1,44 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    # Runs every 3 days at 05:15 UTC to prevent Supabase free plan pausing
+    - cron: "15 5 */3 * *"
+
+  # Allows manual triggering from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send database activity request
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -e
+
+          response=$(curl --silent --show-error \
+            --write-out "\n%{http_code}" \
+            --request PATCH \
+            "${SUPABASE_URL}/rest/v1/keep_alive?id=eq.1" \
+            --header "apikey: ${SUPABASE_ANON_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            --header "Content-Type: application/json" \
+            --header "Prefer: return=minimal" \
+            --data "{\"checked_at\":\"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"}")
+
+          body=$(echo "$response" | sed '$d')
+          status=$(echo "$response" | tail -n 1)
+
+          echo "HTTP status: $status"
+
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "Supabase keep-alive request failed."
+            echo "$body"
+            exit 1
+          fi
+
+          echo "Supabase keep-alive completed successfully."

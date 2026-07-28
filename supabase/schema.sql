@@ -100,3 +100,24 @@ $$ language plpgsql security definer;
 -- create trigger on_auth_user_created
 --   after insert on auth.users
 --   for each row execute procedure public.handle_new_user();
+
+-- Keep Alive table for periodic database activity (prevents free plan pausing)
+create table if not exists public.keep_alive (
+  id integer primary key,
+  checked_at timestamptz not null default now()
+);
+
+-- Seed single row if not present
+insert into public.keep_alive (id)
+values (1)
+on conflict (id) do nothing;
+
+alter table public.keep_alive enable row level security;
+
+create policy "Allow keep-alive update"
+on public.keep_alive
+for update
+to anon
+using (id = 1)
+with check (id = 1);
+
