@@ -107,17 +107,26 @@ create table if not exists public.keep_alive (
   checked_at timestamptz not null default now()
 );
 
--- Seed single row if not present
-insert into public.keep_alive (id)
-values (1)
-on conflict (id) do nothing;
-
 alter table public.keep_alive enable row level security;
 
-create policy "Allow keep-alive update"
-on public.keep_alive
-for update
+drop policy if exists "Allow keep-alive select" on public.keep_alive;
+drop policy if exists "Allow keep-alive insert" on public.keep_alive;
+drop policy if exists "Allow keep-alive update" on public.keep_alive;
+
+create policy "Allow keep-alive select"
+on public.keep_alive for select
 to anon
-using (id = 1)
-with check (id = 1);
+using (true);
+
+create policy "Allow keep-alive insert"
+on public.keep_alive for insert
+to anon
+with check (true);
+
+create policy "Allow keep-alive update"
+on public.keep_alive for update
+to anon
+using (true)
+with check (true);
+
 
