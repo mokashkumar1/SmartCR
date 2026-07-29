@@ -84,13 +84,15 @@ export default function StudentsPage() {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setEditing(student)}
-                  className="p-2 rounded-md text-dark-60 hover:text-primary hover:bg-surface-muted transition-fast"
+                  aria-label={`Edit ${student.roll_number} ${student.name}`}
+                  className="p-3 rounded-lg text-dark-60 hover:text-primary hover:bg-surface-muted transition-fast"
                 >
                   <Pencil size={16} />
                 </button>
                 <button
                   onClick={() => handleDelete(student.id)}
-                  className="p-2 rounded-md text-dark-60 hover:text-status-error hover:bg-surface-muted transition-fast"
+                  aria-label={`Delete ${student.roll_number} ${student.name}`}
+                  className="p-3 rounded-lg text-dark-60 hover:text-status-error hover:bg-surface-muted transition-fast"
                 >
                   <Trash2 size={16} />
                 </button>

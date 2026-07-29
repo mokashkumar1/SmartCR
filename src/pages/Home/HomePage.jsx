@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useStudentsStore } from '../../store/studentsStore'
 import { useAttendanceStore } from '../../store/attendanceStore'
-import { Settings, Users, CheckCircle2, UserRoundX, TrendingUp, Calendar, AlertTriangle, ScanLine, ChevronRight, Bell, Clock3 } from 'lucide-react'
+import { Settings, Users, CheckCircle2, UserRoundX, TrendingUp, AlertTriangle, ScanLine, ChevronRight, Clock3 } from 'lucide-react'
 import BottomNav from '../../components/layout/BottomNav'
 import Button from '../../components/ui/Button'
 
@@ -14,38 +14,28 @@ export default function HomePage() {
   const { sessions, records, fetchSessions, fetchRecords } = useAttendanceStore()
 
   useEffect(() => {
-    fetchStudents()
-    fetchSessions()
-    fetchRecords()
+    const loadDashboard = async () => {
+      await Promise.all([fetchStudents(), fetchSessions()])
+      await fetchRecords()
+    }
+    loadDashboard()
   }, [fetchStudents, fetchSessions, fetchRecords])
 
-  // Simple Today's Summary calculation (mocked/approximated for portfolio perfection)
-  // If we have actual data from today, we'd use it. Otherwise, we calculate from the most recent session.
   const today = new Date()
   const formattedDate = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
   
   let totalStudents = students.length || 0
   let present = 0
   let absent = 0
-  let attendancePerc = 0
+  let attendancePerc = null
 
-  if (totalStudents > 0) {
-    // Just use a dummy high attendance for the dashboard if no records, to look good for portfolio
-    // Or if we have real records, we can calculate the latest session.
-    const latestSession = sessions.find(s => s.completed)
-    if (latestSession && records.length > 0) {
-      const sessionRecords = records.filter(r => r.session_id === latestSession.id)
-      present = sessionRecords.filter(r => r.status === 'present').length
-      absent = sessionRecords.filter(r => r.status === 'absent').length
-      if (present + absent > 0) {
-        attendancePerc = ((present / (present + absent)) * 100).toFixed(1)
-      }
-    } else {
-      // Portfolio dummy data so it doesn't look empty and broken when presented
-      present = Math.floor(totalStudents * 0.9)
-      absent = totalStudents - present
-      attendancePerc = totalStudents > 0 ? ((present / totalStudents) * 100).toFixed(1) : 0
-    }
+  const latestSession = sessions.find((session) => session.completed)
+  if (latestSession) {
+    const sessionRecords = records.filter((record) => record.session_id === latestSession.id)
+    absent = sessionRecords.filter((record) => record.status === 'absent').length
+    totalStudents = latestSession.total_students
+    present = Math.max(0, totalStudents - absent)
+    attendancePerc = totalStudents > 0 ? ((present / totalStudents) * 100).toFixed(1) : 0
   }
 
   return (
@@ -57,7 +47,6 @@ export default function HomePage() {
           <div><p className="text-lg font-bold leading-none">Attendance</p><p className="text-[11px] text-dark-60 mt-1">by Smart<span className="text-[#8177ff]">CR</span></p></div>
         </div>
         <div className="flex gap-2">
-        <button className="text-dark p-2.5 transition-fast hover:bg-surface-muted rounded-full" aria-label="Notifications"><Bell size={21}/></button>
         <button 
           className="text-dark p-2.5 transition-fast active:scale-95 bg-primary-light border border-primary/20 rounded-full"
           onClick={() => navigate('/settings')}
@@ -123,7 +112,7 @@ export default function HomePage() {
             <div className="bg-surface-muted p-4 rounded-xl border border-border">
               <p className="text-xs font-semibold text-dark-60 mb-1">Attendance</p>
               <div className="flex justify-between items-end">
-                <h3 className="text-2xl font-bold text-primary">{attendancePerc}%</h3>
+                <h3 className="text-2xl font-bold text-primary">{attendancePerc === null ? '—' : `${attendancePerc}%`}</h3>
                 <div className="bg-primary-light p-1.5 rounded-md">
                   <TrendingUp size={18} className="text-primary" />
                 </div>

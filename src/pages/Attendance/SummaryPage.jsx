@@ -9,8 +9,6 @@ import { showToast } from '../../components/ui/Toast'
 import { buildWhatsAppReport, shareReport } from '../../lib/shareUtils'
 import { Share2, Copy, CheckCircle, XCircle, Home, FileText, Image as ImageIcon, FileSpreadsheet } from 'lucide-react'
 import { format } from 'date-fns'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 
 export default function SummaryPage() {
   const { sessionId } = useParams()
@@ -73,11 +71,10 @@ export default function SummaryPage() {
     csv += `Class,"${classInfo}"\n\n`
     csv += `Roll Number,Name,Status\n`
     
-    sessionRecords.forEach(record => {
-      const student = students.find(s => s.id === record.student_id)
-      if (student) {
-        csv += `"${student.roll_number}","${student.name}","${record.status}"\n`
-      }
+    const absentIds = new Set(sessionRecords.filter((record) => record.status === 'absent').map((record) => record.student_id))
+    students.slice(0, totalStudents).forEach((student) => {
+      const status = absentIds.has(student.id) ? 'absent' : 'present'
+      csv += `"${student.roll_number}","${student.name}","${status}"\n`
     })
     
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -95,6 +92,7 @@ export default function SummaryPage() {
     setIsExporting(true)
     showToast('Generating Image...')
     try {
+      const { default: html2canvas } = await import('html2canvas')
       // Ensure DOM, fonts, and React renders are 100% stable before capture
       if (document.fonts && document.fonts.ready) await document.fonts.ready
       await new Promise(resolve => setTimeout(resolve, 500))
@@ -124,6 +122,10 @@ export default function SummaryPage() {
     setIsExporting(true)
     showToast('Generating PDF...')
     try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ])
       // Ensure DOM, fonts, and React renders are 100% stable before capture
       if (document.fonts && document.fonts.ready) await document.fonts.ready
       await new Promise(resolve => setTimeout(resolve, 500))

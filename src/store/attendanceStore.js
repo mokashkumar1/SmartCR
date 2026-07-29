@@ -65,7 +65,11 @@ export const useAttendanceStore = create((set, get) => ({
         .eq('user_id', user.id)
         .order('date', { ascending: false })
       if (error) throw error
-      set({ sessions: data || [] })
+      const loadedSessions = data || []
+      set((state) => ({
+        sessions: loadedSessions,
+        currentSession: state.currentSession || loadedSessions.find((session) => !session.completed) || null,
+      }))
     } catch (e) {
       console.error('Fetch sessions error', e)
     }
@@ -100,6 +104,20 @@ export const useAttendanceStore = create((set, get) => ({
   createSession: async (subjectId, totalStudents) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
+    const { data: existing, error: existingError } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('subject_id', subjectId)
+      .eq('completed', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (existingError) throw existingError
+    if (existing) {
+      set({ currentSession: existing })
+      return existing
+    }
     const { data, error } = await supabase
       .from('sessions')
       .insert({ user_id: user.id, subject_id: subjectId, total_students: totalStudents, completed: false })
@@ -135,7 +153,33 @@ export const useAttendanceStore = create((set, get) => ({
     return data
   },
 
-  completeSession: async (sessionId) => {
+  completeSession: async (sessionId, absentStudentIds = null) => {
+    if (Array.isArray(absentStudentIds)) {
+      const { error: rpcError } = await supabase.rpc('complete_attendance_session', {
+        p_session_id: sessionId,
+        p_absent_student_ids: absentStudentIds,
+      })
+
+      // Compatibility fallback until the database migration is applied.
+      if (rpcError && ['PGRST202', '42883'].includes(rpcError.code)) {
+        const { error: clearError } = await supabase
+          .from('attendance_records')
+          .delete()
+          .eq('session_id', sessionId)
+        if (clearError) throw clearError
+
+        if (absentStudentIds.length > 0) {
+          const { error: insertError } = await supabase
+            .from('attendance_records')
+            .insert(absentStudentIds.map((studentId) => ({
+              session_id: sessionId,
+              student_id: studentId,
+              status: 'absent',
+            })))
+          if (insertError) throw insertError
+        }
+      } else if (rpcError) throw rpcError
+    }
     const { data, error } = await supabase
       .from('sessions')
       .update({ completed: true, completed_at: new Date().toISOString() })

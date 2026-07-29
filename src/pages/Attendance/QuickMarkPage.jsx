@@ -12,7 +12,7 @@ export default function QuickMarkPage() {
   const { subjectId } = useParams()
   const navigate = useNavigate()
   const { students } = useStudentsStore()
-  const { createSession, markAttendance, completeSession, fetchSubjects } = useAttendanceStore()
+  const { createSession, completeSession, fetchSubjects } = useAttendanceStore()
 
   const [statusMap, setStatusMap] = useState(() => {
     const map = {}
@@ -64,10 +64,10 @@ export default function QuickMarkPage() {
     if (!session) return
     setLoading(true)
     try {
-      await Promise.all(
-        students.map((s) => markAttendance(session.id, s.id, statusMap[s.id] || 'present'))
-      )
-      await completeSession(session.id)
+      const absentStudentIds = students
+        .filter((student) => statusMap[student.id] === 'absent')
+        .map((student) => student.id)
+      await completeSession(session.id, absentStudentIds)
       navigate(`/summary/${session.id}`)
     } catch (err) {
       showToast(err.message || 'Failed to save attendance', 'error')

@@ -16,7 +16,6 @@ export default function TakingPage() {
   const {
     currentSession,
     createSession,
-    markAttendance,
     completeSession,
     resumeSession,
     clearCurrentSession,
@@ -95,13 +94,8 @@ export default function TakingPage() {
       transition: { duration: 0.2 }
     })
 
-    setStatusMap((prev) => ({ ...prev, [studentId]: status }))
-
-    try {
-      await markAttendance(session.id, studentId, status)
-    } catch (err) {
-      showToast('Failed to save. Will retry.', 'error')
-    }
+    const nextStatusMap = { ...statusMap, [studentId]: status }
+    setStatusMap(nextStatusMap)
 
     if (index < students.length - 1) {
       setIndex((i) => i + 1)
@@ -110,7 +104,7 @@ export default function TakingPage() {
       controls.set({ x: 0, opacity: 1, scale: 0.9 })
       controls.start({ scale: 1, transition: { type: 'spring', stiffness: 300, damping: 20 } })
     } else {
-      finishSession()
+      finishSession(nextStatusMap)
     }
   }
 
@@ -129,11 +123,14 @@ export default function TakingPage() {
     }
   }
 
-  const finishSession = async () => {
+  const finishSession = async (finalStatusMap = statusMap) => {
     if (!session) return
     setLoading(true)
     try {
-      await completeSession(session.id)
+      const absentStudentIds = Object.entries(finalStatusMap)
+        .filter(([, status]) => status === 'absent')
+        .map(([studentId]) => studentId)
+      await completeSession(session.id, absentStudentIds)
       clearCurrentSession()
       navigate(`/summary/${session.id}`)
     } catch (err) {
@@ -168,7 +165,7 @@ export default function TakingPage() {
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }} className="text-6xl mb-4">🎉</motion.div>
           <h2 className="text-2xl font-bold text-dark mb-2">All Done!</h2>
           <p className="text-dark-60 mb-8">{markedCount}/{students.length} students marked</p>
-          <Button size="lg" className="w-full max-w-xs" onClick={finishSession} disabled={loading}>
+          <Button size="lg" className="w-full max-w-xs" onClick={() => finishSession()} disabled={loading}>
             {loading ? 'Saving...' : 'Finish & View Report'}
           </Button>
         </div>
@@ -195,7 +192,7 @@ export default function TakingPage() {
             onDragEnd={handleDragEnd}
             style={{ x, rotate, opacity }}
             animate={controls}
-            className="mt-12 mb-12 text-center bg-surface-card border border-border shadow-card p-8 rounded-xl cursor-grab active:cursor-grabbing touch-none"
+            className="mt-6 mb-7 sm:mt-12 sm:mb-12 text-center bg-surface-card border border-border shadow-card p-6 sm:p-8 rounded-xl cursor-grab active:cursor-grabbing touch-none"
           >
             <div className="text-[32px] font-bold tracking-wider text-dark mb-3 drop-shadow-sm">
               {currentStudent.roll_number}

@@ -41,11 +41,11 @@ export default function AddStudentModal({ student, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-dark-60 backdrop-blur-[2px] p-0 sm:p-4">
-      <div className="w-full sm:max-w-[560px] bg-surface-card border border-border rounded-t-xl sm:rounded-xl shadow-modal flex flex-col">
+      <div role="dialog" aria-modal="true" aria-labelledby="student-dialog-title" className="w-full sm:max-w-[560px] bg-surface-card border border-border rounded-t-xl sm:rounded-xl shadow-modal flex flex-col">
         
         <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-          <h2 className="text-lg font-bold text-dark">{student ? 'Edit Student' : 'Add Student'}</h2>
-          <button onClick={onClose} className="p-1 rounded-md hover:bg-surface-muted text-dark-60 hover:text-dark transition-colors">
+          <h2 id="student-dialog-title" className="text-lg font-bold text-dark">{student ? 'Edit Student' : 'Add Student'}</h2>
+          <button onClick={onClose} aria-label="Close student dialog" className="p-2 rounded-md hover:bg-surface-muted text-dark-60 hover:text-dark transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -53,8 +53,9 @@ export default function AddStudentModal({ student, onClose, onSaved }) {
         <div className="px-6 py-5">
           <form id="studentForm" onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-dark mb-1">Roll Number</label>
+              <label htmlFor="student-roll" className="block text-sm font-medium text-dark mb-1">Roll Number</label>
               <input
+                id="student-roll"
                 type="text"
                 value={roll}
                 onChange={(e) => setRoll(e.target.value)}
@@ -64,8 +65,9 @@ export default function AddStudentModal({ student, onClose, onSaved }) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-dark mb-1">Name</label>
+              <label htmlFor="student-name" className="block text-sm font-medium text-dark mb-1">Name</label>
               <input
+                id="student-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}

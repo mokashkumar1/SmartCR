@@ -10,8 +10,6 @@ import { CheckCircle, XCircle, Trash2, Share2, Copy, FileText, Image as ImageIco
 import { showToast } from '../../components/ui/Toast'
 import { format } from 'date-fns'
 import { buildWhatsAppReport, shareReport } from '../../lib/shareUtils'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 
 export default function SessionDetailPage() {
   const { sessionId } = useParams()
@@ -81,11 +79,10 @@ export default function SessionDetailPage() {
     csv += `Class,"${classInfo}"\n\n`
     csv += `Roll Number,Name,Status\n`
     
-    sessionRecords.forEach(record => {
-      const student = getStudent(record.student_id)
-      if (student) {
-        csv += `"${student.roll_number}","${student.name}","${record.status}"\n`
-      }
+    const absentIds = new Set(absentRecords.map((record) => record.student_id))
+    students.slice(0, totalStudents).forEach((student) => {
+      const status = absentIds.has(student.id) ? 'absent' : 'present'
+      csv += `"${student.roll_number}","${student.name}","${status}"\n`
     })
     
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -103,6 +100,7 @@ export default function SessionDetailPage() {
     setIsExporting(true)
     showToast('Generating Image...')
     try {
+      const { default: html2canvas } = await import('html2canvas')
       if (document.fonts && document.fonts.ready) await document.fonts.ready
       await new Promise(resolve => setTimeout(resolve, 500))
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
@@ -131,6 +129,10 @@ export default function SessionDetailPage() {
     setIsExporting(true)
     showToast('Generating PDF...')
     try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ])
       if (document.fonts && document.fonts.ready) await document.fonts.ready
       await new Promise(resolve => setTimeout(resolve, 500))
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))

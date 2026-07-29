@@ -15,10 +15,11 @@ export default function LowAttendancePage() {
   const { students, fetchStudents } = useStudentsStore()
 
   useEffect(() => {
-    fetchSubjects()
-    fetchSessions()
-    fetchRecords()
-    fetchStudents()
+    const loadAttendance = async () => {
+      await Promise.all([fetchSubjects(), fetchSessions(), fetchStudents()])
+      await fetchRecords()
+    }
+    loadAttendance()
   }, [fetchSubjects, fetchSessions, fetchRecords, fetchStudents])
 
   const lowAttendanceList = []

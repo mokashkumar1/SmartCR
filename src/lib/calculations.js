@@ -3,11 +3,12 @@ export function getAttendanceStats(sessions, records, studentId, subjectId) {
     (s) => s.subject_id === subjectId && s.completed
   )
   const totalSessions = subjectSessions.length
-  const attended = records.filter((r) =>
+  const absent = records.filter((r) =>
     r.student_id === studentId &&
-    r.status === 'present' &&
+    r.status === 'absent' &&
     subjectSessions.some((s) => s.id === r.session_id)
   ).length
+  const attended = Math.max(0, totalSessions - absent)
 
   return {
     attended,

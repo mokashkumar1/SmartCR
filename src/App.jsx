@@ -1,23 +1,28 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { useAuthStore } from './store/authStore'
 import { useThemeStore } from './store/themeStore'
 
-import LoginPage from './pages/Auth/LoginPage'
-import SetupPage from './pages/Auth/SetupPage'
-import ResetPasswordPage from './pages/Auth/ResetPasswordPage'
-import SubjectSelectPage from './pages/Attendance/SubjectSelectPage'
-import TakingPage from './pages/Attendance/TakingPage'
-import QuickMarkPage from './pages/Attendance/QuickMarkPage'
-import SummaryPage from './pages/Attendance/SummaryPage'
-import StudentsPage from './pages/Students/StudentsPage'
-import HistoryPage from './pages/History/HistoryPage'
-import SessionDetailPage from './pages/History/SessionDetailPage'
-import SubjectStatsPage from './pages/History/SubjectStatsPage'
-import LowAttendancePage from './pages/History/LowAttendancePage'
-import SettingsPage from './pages/Settings/SettingsPage'
+const LoginPage = lazy(() => import('./pages/Auth/LoginPage'))
+const SetupPage = lazy(() => import('./pages/Auth/SetupPage'))
+const ResetPasswordPage = lazy(() => import('./pages/Auth/ResetPasswordPage'))
+const SubjectSelectPage = lazy(() => import('./pages/Attendance/SubjectSelectPage'))
+const TakingPage = lazy(() => import('./pages/Attendance/TakingPage'))
+const QuickMarkPage = lazy(() => import('./pages/Attendance/QuickMarkPage'))
+const SummaryPage = lazy(() => import('./pages/Attendance/SummaryPage'))
+const StudentsPage = lazy(() => import('./pages/Students/StudentsPage'))
+const HistoryPage = lazy(() => import('./pages/History/HistoryPage'))
+const SessionDetailPage = lazy(() => import('./pages/History/SessionDetailPage'))
+const SubjectStatsPage = lazy(() => import('./pages/History/SubjectStatsPage'))
+const LowAttendancePage = lazy(() => import('./pages/History/LowAttendancePage'))
+const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'))
+const HomePage = lazy(() => import('./pages/Home/HomePage'))
 
-import HomePage from './pages/Home/HomePage'
+const RouteLoader = () => (
+  <div className="min-h-screen bg-surface-bg flex items-center justify-center">
+    <div className="text-sm font-medium text-dark-60 animate-pulse">Loading SmartCR...</div>
+  </div>
+)
 
 function App() {
   const { session, profile, initialized, initAuth } = useAuthStore()
@@ -48,29 +53,29 @@ function App() {
   // Not logged in
   if (!session && !isLocalPreview) {
     return (
-      <Routes>
+      <Suspense fallback={<RouteLoader />}><Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+      </Routes></Suspense>
     )
   }
 
   // Logged in but no profile yet
   if (!profile && !isLocalPreview) {
     return (
-      <Routes>
+      <Suspense fallback={<RouteLoader />}><Routes>
         <Route path="/setup" element={<SetupPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="*" element={<Navigate to="/setup" replace />} />
-      </Routes>
+      </Routes></Suspense>
     )
   }
 
   // Fully authenticated
   return (
     <div className="min-h-screen bg-transparent pb-20 transition-colors duration-200">
-      <Routes>
+      <Suspense fallback={<RouteLoader />}><Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/classes" element={<SubjectSelectPage />} />
@@ -84,7 +89,7 @@ function App() {
         <Route path="/low-attendance" element={<LowAttendancePage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      </Routes></Suspense>
     </div>
   )
 }

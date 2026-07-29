@@ -20,6 +20,9 @@ export default function SettingsPage() {
   const [deptCode, setDeptCode] = useState(profile?.dept_code || '')
   const [section, setSection] = useState(profile?.section || '')
   const [saving, setSaving] = useState(false)
+  const assertSuccess = (result, action) => {
+    if (result?.error) throw new Error(`${action}: ${result.error.message}`)
+  }
 
   const handleSaveProfile = async (e) => {
     e.preventDefault()
@@ -77,11 +80,14 @@ export default function SettingsPage() {
         showToast('Restoring backup, please wait...')
 
         // Execute upserts to Supabase tables
-        if (data.profile) await supabase.from('profiles').upsert(data.profile)
-        if (data.students?.length) await supabase.from('students').upsert(data.students)
-        if (data.subjects?.length) await supabase.from('subjects').upsert(data.subjects)
-        if (data.sessions?.length) await supabase.from('sessions').upsert(data.sessions)
-        if (data.records?.length) await supabase.from('attendance_records').upsert(data.records)
+        if (!Array.isArray(data.students) || !Array.isArray(data.subjects) || !Array.isArray(data.sessions) || !Array.isArray(data.records)) {
+          throw new Error('Backup file is incomplete or uses an unsupported format')
+        }
+        if (data.profile) assertSuccess(await supabase.from('profiles').upsert(data.profile), 'Profile restore failed')
+        if (data.students.length) assertSuccess(await supabase.from('students').upsert(data.students), 'Student restore failed')
+        if (data.subjects.length) assertSuccess(await supabase.from('subjects').upsert(data.subjects), 'Class restore failed')
+        if (data.sessions.length) assertSuccess(await supabase.from('sessions').upsert(data.sessions), 'Session restore failed')
+        if (data.records.length) assertSuccess(await supabase.from('attendance_records').upsert(data.records), 'Attendance restore failed')
 
         // Refresh all local stores to reflect restored data
         if (data.profile?.id) await useAuthStore.getState().fetchProfile(data.profile.id)
@@ -111,10 +117,10 @@ export default function SettingsPage() {
       showToast('Clearing semester data...')
       
       if (sessionIds.length > 0) {
-        await supabase.from('attendance_records').delete().in('session_id', sessionIds)
+        assertSuccess(await supabase.from('attendance_records').delete().in('session_id', sessionIds), 'Attendance cleanup failed')
       }
-      await supabase.from('sessions').delete().eq('user_id', user.id)
-      await supabase.from('subjects').delete().eq('user_id', user.id)
+      assertSuccess(await supabase.from('sessions').delete().eq('user_id', user.id), 'Session cleanup failed')
+      assertSuccess(await supabase.from('subjects').delete().eq('user_id', user.id), 'Class cleanup failed')
 
       await useAttendanceStore.getState().fetchSubjects()
       await useAttendanceStore.getState().fetchSessions()
@@ -140,12 +146,12 @@ export default function SettingsPage() {
       showToast('Wiping all data...')
       
       if (sessionIds.length > 0) {
-        await supabase.from('attendance_records').delete().in('session_id', sessionIds)
+        assertSuccess(await supabase.from('attendance_records').delete().in('session_id', sessionIds), 'Attendance cleanup failed')
       }
-      await supabase.from('sessions').delete().eq('user_id', user.id)
-      await supabase.from('subjects').delete().eq('user_id', user.id)
-      await supabase.from('students').delete().eq('user_id', user.id)
-      await supabase.from('profiles').delete().eq('id', user.id)
+      assertSuccess(await supabase.from('sessions').delete().eq('user_id', user.id), 'Session cleanup failed')
+      assertSuccess(await supabase.from('subjects').delete().eq('user_id', user.id), 'Class cleanup failed')
+      assertSuccess(await supabase.from('students').delete().eq('user_id', user.id), 'Student cleanup failed')
+      assertSuccess(await supabase.from('profiles').delete().eq('id', user.id), 'Profile cleanup failed')
 
       useStudentsStore.getState().clearStudents()
       useAuthStore.setState({ profile: null })
@@ -181,6 +187,9 @@ export default function SettingsPage() {
             </div>
             <button 
               onClick={toggleTheme}
+              role="switch"
+              aria-checked={theme === 'dark'}
+              aria-label="Toggle dark mode"
               className="w-14 h-8 bg-surface-muted rounded-full relative transition-colors duration-300 border border-border"
             >
               <div className={`absolute top-1 left-1 w-6 h-6 rounded-full transition-transform duration-300 flex items-center justify-center ${theme === 'dark' ? 'translate-x-6 bg-primary' : 'bg-white shadow-sm'}`}>
@@ -197,29 +206,37 @@ export default function SettingsPage() {
             <h2 className="text-sm font-bold text-dark-60 uppercase tracking-wider">CR Profile</h2>
           </div>
           <form onSubmit={handleSaveProfile} className="space-y-3">
+            <label htmlFor="cr-name" className="sr-only">CR name</label>
             <input
+              id="cr-name"
               type="text"
               value={crName}
               onChange={(e) => setCrName(e.target.value)}
               placeholder="Your Name"
               className="w-full h-12 px-4 bg-surface-card border border-border rounded-md text-dark placeholder:text-dark-30 focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_var(--color-border-focus)] transition-fast shadow-sm"
             />
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 min-[380px]:grid-cols-3 gap-2">
+              <label htmlFor="batch" className="sr-only">Batch</label>
               <input
+                id="batch"
                 type="text"
                 value={batch}
                 onChange={(e) => setBatch(e.target.value)}
                 placeholder="Batch"
                 className="w-full h-12 px-3 bg-surface-card border border-border rounded-md text-dark placeholder:text-dark-30 focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_var(--color-border-focus)] transition-fast shadow-sm"
               />
+              <label htmlFor="department" className="sr-only">Department</label>
               <input
+                id="department"
                 type="text"
                 value={deptCode}
                 onChange={(e) => setDeptCode(e.target.value)}
                 placeholder="Dept"
                 className="w-full h-12 px-3 bg-surface-card border border-border rounded-md text-dark placeholder:text-dark-30 focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_var(--color-border-focus)] transition-fast shadow-sm"
               />
+              <label htmlFor="section" className="sr-only">Section</label>
               <input
+                id="section"
                 type="text"
                 value={section}
                 onChange={(e) => setSection(e.target.value)}

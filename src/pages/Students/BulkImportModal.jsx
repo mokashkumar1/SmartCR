@@ -55,11 +55,11 @@ RULES FOR EXTRACTION:
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-dark-60 backdrop-blur-[2px] p-0 sm:p-4">
-      <div className="w-full sm:max-w-[560px] bg-surface-card border border-border rounded-t-xl sm:rounded-xl shadow-modal max-h-[90vh] flex flex-col">
+      <div role="dialog" aria-modal="true" aria-labelledby="bulk-import-title" className="w-full sm:max-w-[560px] bg-surface-card border border-border rounded-t-xl sm:rounded-xl shadow-modal max-h-[90vh] flex flex-col">
         
         <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-          <h2 className="text-lg font-bold text-dark">Bulk Import</h2>
-          <button onClick={onClose} className="p-1 rounded-md hover:bg-surface-muted text-dark-60 hover:text-dark transition-colors">
+          <h2 id="bulk-import-title" className="text-lg font-bold text-dark">Bulk Import</h2>
+          <button onClick={onClose} aria-label="Close bulk import dialog" className="p-2 rounded-md hover:bg-surface-muted text-dark-60 hover:text-dark transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -93,6 +93,7 @@ RULES FOR EXTRACTION:
           </details>
 
           <textarea
+            aria-label="Student CSV data"
             value={text}
             onChange={(e) => { setText(e.target.value); setPreview(null) }}
             placeholder={`24CS030, Moksh Kumar\n24CS031, Ali Khan\nBSCS-20-01, Sara Ahmed`}
