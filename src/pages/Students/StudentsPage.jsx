@@ -7,7 +7,7 @@ import EmptyState from '../../components/ui/EmptyState'
 import Button from '../../components/ui/Button'
 import AddStudentModal from './AddStudentModal'
 import BulkImportModal from './BulkImportModal'
-import { Plus, Upload, Trash2, Pencil, Search } from 'lucide-react'
+import { Plus, Upload, Trash2, Pencil, Search, UserRound } from 'lucide-react'
 import { showToast } from '../../components/ui/Toast'
 
 export default function StudentsPage() {
@@ -39,10 +39,10 @@ export default function StudentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-bg pb-24">
+    <div className="app-shell">
       <PageHeader title="Students" showBack={false} />
 
-      <div className="px-4 py-3 space-y-3">
+      <div className="page-wrap py-5 space-y-4">
         <div className="relative">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-60" />
           <input
@@ -50,13 +50,13 @@ export default function StudentsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by roll or name..."
-            className="w-full h-10 pl-10 pr-4 bg-surface-card border border-border rounded-md text-dark placeholder:text-dark-30 focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_var(--color-border-focus)] transition-fast shadow-sm"
+            className="input-premium h-12 pl-11 pr-4"
           />
         </div>
 
         <div className="flex gap-2">
-          <Button variant="neutral" className="flex-1 rounded-md" onClick={() => setShowAdd(true)}>
-            <Plus size={16} className="mr-2" /> Add
+          <Button variant="primary" className="flex-1 rounded-xl" onClick={() => setShowAdd(true)}>
+            <Plus size={16} className="mr-2" /> Add Student
           </Button>
           <Button variant="neutral" className="flex-1 rounded-md" onClick={() => setShowBulk(true)}>
             <Upload size={16} className="mr-2" /> Import CSV
@@ -64,18 +64,22 @@ export default function StudentsPage() {
         </div>
       </div>
 
-      <div className="px-4 mt-2 space-y-2">
+      <div className="page-wrap mt-1 space-y-3">
+        <div className="flex justify-between items-center mb-4"><span className="text-sm text-dark-60">Total Students</span><span className="text-sm font-bold text-dark">{filtered.length}</span></div>
         {filtered.length === 0 ? (
           <EmptyState title="No students found" subtitle={search ? 'Try a different search.' : 'Add your first student to get started.'} />
         ) : (
           filtered.map((student) => (
             <div
               key={student.id}
-              className="flex items-center justify-between p-4 bg-surface-card border border-border rounded-lg shadow-sm"
+              className="flex items-center justify-between p-4 premium-card border-l-[3px] border-l-primary"
             >
-              <div>
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-full bg-surface-muted border border-border flex items-center justify-center text-primary"><UserRound size={20}/></div>
+                <div>
                 <div className="font-bold text-dark">{student.roll_number}</div>
                 <div className="text-sm font-medium text-dark-60 mt-0.5">{student.name}</div>
+                </div>
               </div>
               <div className="flex items-center gap-1">
                 <button

@@ -7,12 +7,19 @@
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+    color-scheme: dark;
   }
   body {
     background-color: var(--color-surface-bg);
     color: var(--color-dark);
     font-family: var(--font-family);
     overscroll-behavior-y: none;
+    margin: 0;
+    min-width: 320px;
+    background-image:
+      radial-gradient(circle at 12% -10%, rgba(255,59,63,.12), transparent 28rem),
+      radial-gradient(circle at 100% 35%, rgba(93,79,255,.06), transparent 24rem);
+    background-attachment: fixed;
   }
   #root {
     @apply min-h-screen relative z-10;
@@ -21,8 +28,24 @@
 
 @layer components {
   .glass-panel {
-    @apply bg-surface-card border border-border shadow-card;
+    @apply bg-surface-card border border-border shadow-card backdrop-blur-xl;
   }
+}
+
+button, a, input, select, textarea { -webkit-font-smoothing: antialiased; }
+button, a { touch-action: manipulation; }
+
+.app-shell { @apply min-h-screen bg-transparent pb-24; }
+.page-wrap { @apply w-full max-w-5xl mx-auto px-4 sm:px-6; }
+.premium-card {
+  @apply bg-surface-card border border-border rounded-xl shadow-card;
+  background-image: linear-gradient(145deg, rgba(255,255,255,.035), transparent 45%);
+}
+.icon-tile { @apply flex items-center justify-center rounded-xl bg-primary-light text-primary; }
+.section-title { @apply text-xl font-bold tracking-[-0.02em] text-dark; }
+.subtle-label { @apply text-xs font-semibold uppercase tracking-[0.14em] text-dark-60; }
+.input-premium {
+  @apply w-full bg-surface-card border border-border rounded-xl text-dark placeholder:text-dark-30 focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_var(--color-border-focus)] transition-all;
 }
 
 @layer utilities {

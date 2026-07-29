@@ -1,7 +1,7 @@
 :root {
   /* COLOR TOKENS (Light) */
-  --color-primary:        #E3332D;
-  --color-primary-hover:  #C92A25;
+  --color-primary:        #FF3B3F;
+  --color-primary-hover:  #FF565A;
   --color-primary-light:  #FDE8E8;
   --color-primary-text:   #FFFFFF;
 
@@ -9,7 +9,7 @@
   --color-dark-60:        rgba(18,18,18,0.60);
   --color-dark-30:        rgba(18,18,18,0.30);
 
-  --color-surface-bg:     #F5F5F7;
+  --color-surface-bg:     #F6F7F9;
   --color-surface-card:   #FFFFFF;
   --color-surface-muted:  #F0F0F0;
   --color-border:         #E8E8E8;
@@ -35,12 +35,12 @@
   /* RADIUS TOKENS */
   --radius-sm:   4px;
   --radius-md:   6px;
-  --radius-lg:   10px;
-  --radius-xl:   16px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
   --radius-full: 9999px;
 
   /* SHADOW TOKENS */
-  --shadow-card:   0 1px 4px rgba(0,0,0,0.08);
+  --shadow-card:   0 10px 32px rgba(15,18,24,0.08);
   --shadow-modal:  0 8px 32px rgba(0,0,0,0.12);
   --shadow-hover:  0 4px 12px rgba(0,0,0,0.10);
   --shadow-none:   none;
@@ -75,8 +75,8 @@
 
 .dark {
   /* COLOR TOKENS (Dark Mode Equivalents) */
-  --color-primary:        #E3332D;
-  --color-primary-hover:  #F0443D;
+  --color-primary:        #FF3B3F;
+  --color-primary-hover:  #FF565A;
   --color-primary-light:  rgba(227, 51, 45, 0.15);
   --color-primary-text:   #FFFFFF;
 
@@ -84,10 +84,10 @@
   --color-dark-60:        rgba(245, 245, 247, 0.60);
   --color-dark-30:        rgba(245, 245, 247, 0.30);
 
-  --color-surface-bg:     #0D0D0D;
-  --color-surface-card:   #1A1A1A;
-  --color-surface-muted:  #262626;
-  --color-border:         #333333;
+  --color-surface-bg:     #090B0F;
+  --color-surface-card:   #11151B;
+  --color-surface-muted:  #191E26;
+  --color-border:         #252B34;
   --color-border-focus:   rgba(227,51,45,0.50);
 
   --color-success:        #2EBA5A;
@@ -98,7 +98,7 @@
   --color-error-light:    rgba(227, 51, 45, 0.15);
 
   /* SHADOW TOKENS (Dark Mode adjustments) */
-  --shadow-card:   0 1px 4px rgba(0,0,0,0.50);
+  --shadow-card:   0 16px 42px rgba(0,0,0,0.34);
   --shadow-modal:  0 8px 32px rgba(0,0,0,0.60);
   --shadow-hover:  0 4px 12px rgba(0,0,0,0.40);
 }

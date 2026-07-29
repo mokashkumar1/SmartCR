@@ -4,7 +4,7 @@ import { useAttendanceStore } from '../../store/attendanceStore'
 import { useStudentsStore } from '../../store/studentsStore'
 import { useAuthStore } from '../../store/authStore'
 import { useThemeStore } from '../../store/themeStore'
-import { Plus, ChevronRight, AlertCircle, Zap, RotateCcw, Users, BookOpen, Sun, Moon } from 'lucide-react'
+import { Plus, AlertCircle, Zap, RotateCcw, BookOpen, Search, MoreVertical } from 'lucide-react'
 import BottomNav from '../../components/layout/BottomNav'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
@@ -75,18 +75,19 @@ export default function SubjectSelectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-bg pb-20 transition-colors duration-200">
-      <div className="px-5 pt-8 pb-4 flex justify-between items-center sticky top-0 bg-surface-bg z-10">
+    <div className="app-shell transition-colors duration-200">
+      <div className="page-wrap pt-7 pb-4 flex justify-between items-center sticky top-0 bg-surface-bg/90 backdrop-blur-xl z-10">
         <h1 className="text-2xl font-bold text-dark">Classes</h1>
         {!showAdd && (
           <button 
             onClick={() => setShowAdd(true)}
-            className="text-[15px] font-semibold text-primary flex items-center bg-primary-light px-3 py-1.5 rounded-md hover:bg-border transition-fast"
+            className="text-[15px] font-semibold text-primary flex items-center bg-primary-light border border-primary/20 px-4 py-2.5 rounded-xl hover:border-primary transition-fast"
           >
             <Plus size={18} className="mr-1" /> Add
           </button>
         )}
       </div>
+      <div className="page-wrap mb-5"><div className="relative"><Search size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-60"/><input className="input-premium h-12 pl-12 pr-4" placeholder="Search classes" aria-label="Search classes"/></div></div>
 
       {showResume && currentSession && (
         <div className="mx-5 mb-6 p-4 bg-status-warning-light border border-status-warning/20 rounded-lg shadow-card">
@@ -129,15 +130,15 @@ export default function SubjectSelectPage() {
         </form>
       )}
 
-      <div className="px-5 space-y-4">
+      <div className="page-wrap space-y-4">
         {subjects.length === 0 ? (
           <EmptyState title="No classes yet" subtitle="Add your first class to start taking attendance." />
         ) : (
           subjects.map((subj) => (
-            <div key={subj.id} className="bg-surface-card border border-border rounded-lg overflow-hidden shadow-card">
+            <div key={subj.id} className="premium-card overflow-hidden">
               <div className="p-5 flex items-center justify-between border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="bg-primary-light p-2.5 rounded-md">
+                  <div className="bg-primary-light p-3 rounded-xl">
                     <BookOpen size={22} className="text-primary" />
                   </div>
                   <div>
@@ -145,8 +146,9 @@ export default function SubjectSelectPage() {
                     <span className="text-sm font-medium text-dark-60 block mt-0.5">{profile?.batch} - {profile?.section}</span>
                   </div>
                 </div>
+                <button aria-label={`More options for ${subj.name}`} className="p-2 rounded-lg bg-surface-muted text-dark-60"><MoreVertical size={18}/></button>
               </div>
-              <div className="px-5 py-3 bg-surface-muted flex gap-3">
+              <div className="px-5 py-4 bg-surface-muted/60 flex gap-3">
                 <Button
                   size="md"
                   variant="primary"

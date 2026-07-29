@@ -67,7 +67,7 @@ function App() {
 
   // Fully authenticated
   return (
-    <div className="min-h-screen bg-surface-bg pb-20 transition-colors duration-200">
+    <div className="min-h-screen bg-transparent pb-20 transition-colors duration-200">
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

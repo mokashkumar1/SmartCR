@@ -27,10 +27,10 @@ export default function HistoryPage() {
   }))
 
   return (
-    <div className="min-h-screen bg-surface-bg pb-20">
-      <PageHeader title="History" showBack={false} />
+    <div className="app-shell">
+      <PageHeader title="Reports" showBack={false} />
 
-      <div className="px-4 mt-2 space-y-6">
+      <div className="page-wrap mt-5 space-y-7">
         {grouped.length === 0 || grouped.every((g) => g.sessions.length === 0) ? (
           <EmptyState title="No history yet" subtitle="Complete an attendance session to see it here." />
         ) : (
@@ -41,7 +41,7 @@ export default function HistoryPage() {
                   <h2 className="text-sm font-semibold text-dark-60 uppercase tracking-wider">{subj.name}</h2>
                   <button
                     onClick={() => navigate(`/stats/${subj.id}`)}
-                    className="flex items-center gap-1 text-xs text-primary hover:text-primary-hover hover:bg-surface-muted transition-fast rounded-md p-1"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary-light border border-primary/20 transition-fast rounded-full px-3 py-1.5"
                   >
                     <BarChart3 size={14} /> Stats
                   </button>
@@ -51,10 +51,10 @@ export default function HistoryPage() {
                     <button
                       key={session.id}
                       onClick={() => navigate(`/history/${session.id}`)}
-                      className="w-full flex items-center justify-between p-4 bg-surface-card border border-border rounded-lg hover:bg-surface-muted transition-fast shadow-sm text-left"
+                      className="w-full flex items-center justify-between p-4 premium-card hover:border-primary/40 transition-fast text-left"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="bg-primary-light p-2.5 rounded-md">
+                        <div className="bg-primary-light p-3 rounded-xl">
                           <Calendar size={18} className="text-primary" />
                         </div>
                         <div>

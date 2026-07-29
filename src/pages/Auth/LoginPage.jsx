@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
-import { Mail, Lock, Eye, EyeOff, Inbox, ArrowLeft } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Inbox, ArrowLeft, CheckCircle2, GraduationCap } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import { showToast } from '../../components/ui/Toast'
-
-import logo from '../../assets/smartcrlogo.png'
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -45,20 +43,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen relative flex flex-col justify-center px-6 overflow-hidden bg-surface-bg">
-      <div className="relative z-10 w-full max-w-sm mx-auto">
+    <div className="min-h-screen relative flex flex-col justify-center px-5 py-10 overflow-hidden bg-surface-bg">
+      <div className="absolute -top-40 -left-28 w-80 h-80 rounded-full bg-primary/20 blur-[100px]" />
+      <div className="absolute -bottom-48 -right-28 w-96 h-96 rounded-full bg-primary/15 blur-[110px]" />
+      <div className="relative z-10 w-full max-w-md mx-auto">
         <div className="mb-8 flex flex-col items-center text-center">
-          <img 
-            src={logo} 
-            alt="SmartCR Logo" 
-            className="w-full max-w-[240px] h-auto object-contain rounded-[1.25rem] shadow-[0_8px_30px_rgb(0,0,0,0.12)] mb-2" 
-          />
-          <p className="text-[#818CF8] text-[10px] font-bold tracking-[0.2em] uppercase opacity-90">
-            Built for Pakistani University CRs
-          </p>
+          <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-[#ff4c50] to-[#d71920] flex items-center justify-center shadow-[0_18px_50px_rgba(255,59,63,.32)] mb-5">
+            <CheckCircle2 size={44} className="text-white" strokeWidth={2} />
+          </div>
+          <h1 className="text-[34px] font-bold tracking-[-0.04em] text-dark">Attendance</h1>
+          <p className="text-sm text-dark-60">by <span className="text-dark font-semibold">Smart<span className="text-[#8177ff]">CR</span></span></p>
+          <h2 className="text-2xl font-bold text-dark mt-8">Welcome back! 👋</h2>
+          <p className="text-dark-60 mt-2">Sign in to continue tracking attendance.</p>
         </div>
 
-        <div className="bg-surface-card border border-border shadow-card rounded-lg p-6">
+        <div className="premium-card rounded-[28px] p-6 sm:p-8">
           {signupSuccess ? (
             <div className="text-center py-6">
               <div className="mx-auto w-16 h-16 bg-primary-light rounded-full flex items-center justify-center mb-4">
@@ -180,6 +179,11 @@ export default function LoginPage() {
               </form>
 
               {!isForgotPassword && (
+                <>
+                <div className="flex items-center gap-4 my-7 text-dark-30 text-xs"><span className="h-px bg-border flex-1"/><span>or continue with</span><span className="h-px bg-border flex-1"/></div>
+                <button type="button" className="w-full h-12 rounded-xl border border-border bg-surface-muted hover:border-primary/40 text-dark font-medium flex items-center justify-center gap-2 transition-all">
+                  <GraduationCap size={19} className="text-primary" /> Sign in with University SSO
+                </button>
                 <div className="mt-6 text-center">
                   <button
                     onClick={() => setIsSignUp(!isSignUp)}
@@ -188,10 +192,12 @@ export default function LoginPage() {
                     {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
                   </button>
                 </div>
+                </>
               )}
             </>
           )}
         </div>
+        <p className="text-center text-xs text-dark-60 mt-6 flex items-center justify-center gap-2"><CheckCircle2 size={15} className="text-primary"/> Secure • Private • University Trusted</p>
       </div>
     </div>
   )
