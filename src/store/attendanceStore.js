@@ -40,6 +40,20 @@ export const useAttendanceStore = create((set, get) => ({
     return data
   },
 
+  deleteSubject: async (subjectId) => {
+    const { error } = await supabase
+      .from('subjects')
+      .delete()
+      .eq('id', subjectId)
+    if (error) throw error
+    set((state) => ({
+      subjects: state.subjects.filter((subject) => subject.id !== subjectId),
+      sessions: state.sessions.filter((session) => session.subject_id !== subjectId),
+      currentSession:
+        state.currentSession?.subject_id === subjectId ? null : state.currentSession,
+    }))
+  },
+
   // Sessions
   fetchSessions: async () => {
     try {

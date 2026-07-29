@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
-import { Mail, Lock, Eye, EyeOff, Inbox, ArrowLeft, CheckCircle2, GraduationCap } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Inbox, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import { showToast } from '../../components/ui/Toast'
 
@@ -179,11 +179,6 @@ export default function LoginPage() {
               </form>
 
               {!isForgotPassword && (
-                <>
-                <div className="flex items-center gap-4 my-7 text-dark-30 text-xs"><span className="h-px bg-border flex-1"/><span>or continue with</span><span className="h-px bg-border flex-1"/></div>
-                <button type="button" className="w-full h-12 rounded-xl border border-border bg-surface-muted hover:border-primary/40 text-dark font-medium flex items-center justify-center gap-2 transition-all">
-                  <GraduationCap size={19} className="text-primary" /> Sign in with University SSO
-                </button>
                 <div className="mt-6 text-center">
                   <button
                     onClick={() => setIsSignUp(!isSignUp)}
@@ -192,7 +187,6 @@ export default function LoginPage() {
                     {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
                   </button>
                 </div>
-                </>
               )}
             </>
           )}

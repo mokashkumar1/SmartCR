@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAttendanceStore } from '../../store/attendanceStore'
 import { useStudentsStore } from '../../store/studentsStore'
 import { useAuthStore } from '../../store/authStore'
-import { useThemeStore } from '../../store/themeStore'
-import { Plus, AlertCircle, Zap, RotateCcw, BookOpen, Search, MoreVertical } from 'lucide-react'
+import { Plus, AlertCircle, Zap, RotateCcw, BookOpen, Search, MoreVertical, Trash2 } from 'lucide-react'
 import BottomNav from '../../components/layout/BottomNav'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
@@ -13,14 +12,15 @@ import { showToast } from '../../components/ui/Toast'
 export default function SubjectSelectPage() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
-  const { theme, toggleTheme } = useThemeStore()
-  const { subjects, fetchSubjects, addSubject, currentSession, clearCurrentSession } = useAttendanceStore()
+  const { subjects, fetchSubjects, addSubject, deleteSubject, currentSession, clearCurrentSession } = useAttendanceStore()
   const { students, fetchStudents } = useStudentsStore()
   
   const [newSubject, setNewSubject] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showResume, setShowResume] = useState(false)
+  const [search, setSearch] = useState('')
+  const [openMenuId, setOpenMenuId] = useState(null)
 
   useEffect(() => {
     fetchSubjects()
@@ -74,6 +74,25 @@ export default function SubjectSelectPage() {
     setShowResume(false)
   }
 
+  const handleDeleteSubject = async (subject) => {
+    const confirmed = window.confirm(
+      `Delete "${subject.name}"?\n\nThis will also permanently delete its attendance history.`
+    )
+    if (!confirmed) return
+
+    try {
+      await deleteSubject(subject.id)
+      setOpenMenuId(null)
+      showToast('Class deleted')
+    } catch (err) {
+      showToast(err.message || 'Failed to delete class', 'error')
+    }
+  }
+
+  const filteredSubjects = subjects.filter((subject) =>
+    subject.name.toLowerCase().includes(search.trim().toLowerCase())
+  )
+
   return (
     <div className="app-shell transition-colors duration-200">
       <div className="page-wrap pt-7 pb-4 flex justify-between items-center sticky top-0 bg-surface-bg/90 backdrop-blur-xl z-10">
@@ -87,7 +106,7 @@ export default function SubjectSelectPage() {
           </button>
         )}
       </div>
-      <div className="page-wrap mb-5"><div className="relative"><Search size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-60"/><input className="input-premium h-12 pl-12 pr-4" placeholder="Search classes" aria-label="Search classes"/></div></div>
+      <div className="page-wrap mb-5"><div className="relative"><Search size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-60"/><input value={search} onChange={(event) => setSearch(event.target.value)} className="input-premium h-12 pl-12 pr-4" placeholder="Search classes" aria-label="Search classes"/></div></div>
 
       {showResume && currentSession && (
         <div className="mx-5 mb-6 p-4 bg-status-warning-light border border-status-warning/20 rounded-lg shadow-card">
@@ -131,10 +150,10 @@ export default function SubjectSelectPage() {
       )}
 
       <div className="page-wrap space-y-4">
-        {subjects.length === 0 ? (
-          <EmptyState title="No classes yet" subtitle="Add your first class to start taking attendance." />
+        {filteredSubjects.length === 0 ? (
+          <EmptyState title={search ? 'No classes found' : 'No classes yet'} subtitle={search ? 'Try a different search.' : 'Add your first class to start taking attendance.'} />
         ) : (
-          subjects.map((subj) => (
+          filteredSubjects.map((subj) => (
             <div key={subj.id} className="premium-card overflow-hidden">
               <div className="p-5 flex items-center justify-between border-b border-border">
                 <div className="flex items-center gap-3">
@@ -146,7 +165,29 @@ export default function SubjectSelectPage() {
                     <span className="text-sm font-medium text-dark-60 block mt-0.5">{profile?.batch} - {profile?.section}</span>
                   </div>
                 </div>
-                <button aria-label={`More options for ${subj.name}`} className="p-2 rounded-lg bg-surface-muted text-dark-60"><MoreVertical size={18}/></button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    aria-label={`More options for ${subj.name}`}
+                    aria-expanded={openMenuId === subj.id}
+                    onClick={() => setOpenMenuId(openMenuId === subj.id ? null : subj.id)}
+                    className="p-2 rounded-lg bg-surface-muted text-dark-60 hover:text-dark transition-fast"
+                  >
+                    <MoreVertical size={18}/>
+                  </button>
+                  {openMenuId === subj.id && (
+                    <div className="absolute right-0 top-11 z-20 w-48 premium-card p-1.5 shadow-modal">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSubject(subj)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold text-status-error hover:bg-status-error-light transition-fast"
+                      >
+                        <Trash2 size={17} />
+                        Delete class
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="px-5 py-4 bg-surface-muted/60 flex gap-3">
                 <Button
