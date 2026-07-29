@@ -1,6 +1,21 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 
+const isBacklogRollNumber = (rollNumber = '') => /^\d{2}-\d{2}/.test(rollNumber.trim())
+
+const sortStudentsByRollNumber = (students) =>
+  [...students].sort((a, b) => {
+    const aIsBacklog = isBacklogRollNumber(a.roll_number)
+    const bIsBacklog = isBacklogRollNumber(b.roll_number)
+
+    if (aIsBacklog !== bIsBacklog) return aIsBacklog ? 1 : -1
+
+    return a.roll_number.localeCompare(b.roll_number, undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    })
+  })
+
 export const useStudentsStore = create((set, get) => ({
   students: [],
   loading: false,
@@ -16,7 +31,7 @@ export const useStudentsStore = create((set, get) => ({
         .eq('user_id', user.id)
         .order('roll_number', { ascending: true })
       if (error) throw error
-      set({ students: data || [] })
+      set({ students: sortStudentsByRollNumber(data || []) })
     } catch (e) {
       console.error('Fetch students error', e)
     } finally {
@@ -34,7 +49,7 @@ export const useStudentsStore = create((set, get) => ({
       .single()
     if (error) throw error
     set((state) => ({
-      students: [...state.students, data].sort((a, b) => a.roll_number.localeCompare(b.roll_number)),
+      students: sortStudentsByRollNumber([...state.students, data]),
     }))
     return data
   },
@@ -58,7 +73,9 @@ export const useStudentsStore = create((set, get) => ({
       .single()
     if (error) throw error
     set((state) => ({
-      students: state.students.map((s) => (s.id === id ? data : s)).sort((a, b) => a.roll_number.localeCompare(b.roll_number)),
+      students: sortStudentsByRollNumber(
+        state.students.map((s) => (s.id === id ? data : s))
+      ),
     }))
     return data
   },
