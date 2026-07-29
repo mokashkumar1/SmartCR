@@ -24,10 +24,11 @@ export default function SummaryPage() {
   const exportRef = useRef(null)
 
   useEffect(() => {
-    fetchSessions()
-    fetchRecords()
-    fetchSubjects()
-    fetchStudents()
+    const loadSummary = async () => {
+      await Promise.all([fetchSessions(), fetchSubjects(), fetchStudents()])
+      await fetchRecords(sessionId)
+    }
+    loadSummary()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId])
 
@@ -40,8 +41,8 @@ export default function SummaryPage() {
     .map((r) => students.find((s) => s.id === r.student_id))
     .filter(Boolean)
 
-  const presentCount = sessionRecords.filter((r) => r.status === 'present').length
   const totalStudents = session?.total_students ?? students.length
+  const presentCount = Math.max(0, totalStudents - absentees.length)
 
   const subjectName = subject?.name || 'Subject'
   const classInfo = profile ? `${profile.batch}${profile.dept_code}-${profile.section}` : 'Class'

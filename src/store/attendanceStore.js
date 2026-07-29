@@ -71,16 +71,27 @@ export const useAttendanceStore = create((set, get) => ({
     }
   },
 
-  fetchRecords: async () => {
+  fetchRecords: async (sessionId = null) => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+      const sessionIds = sessionId ? [sessionId] : get().sessions.map((s) => s.id)
+      if (sessionIds.length === 0) return
       const { data, error } = await supabase
         .from('attendance_records')
         .select('*')
-        .in('session_id', get().sessions.map((s) => s.id))
+        .in('session_id', sessionIds)
       if (error) throw error
-      set({ records: data || [] })
+      if (sessionId) {
+        set((state) => ({
+          records: [
+            ...state.records.filter((record) => record.session_id !== sessionId),
+            ...(data || []),
+          ],
+        }))
+      } else {
+        set({ records: data || [] })
+      }
     } catch (e) {
       console.error('Fetch records error', e)
     }

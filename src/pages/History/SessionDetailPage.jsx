@@ -25,20 +25,18 @@ export default function SessionDetailPage() {
   const exportRef = useRef(null)
 
   useEffect(() => {
-    fetchSessions()
-    fetchRecords()
-    fetchSubjects()
-    fetchStudents()
+    const loadSession = async () => {
+      await Promise.all([fetchSessions(), fetchSubjects(), fetchStudents()])
+      await fetchRecords(sessionId)
+    }
+    loadSession()
   }, [fetchSessions, fetchRecords, fetchSubjects, fetchStudents, sessionId])
 
   const session = sessions.find((s) => s.id === sessionId)
   const sessionRecords = records.filter((r) => r.session_id === sessionId)
   const subject = subjects.find((s) => s.id === session?.subject_id)
 
-  const presentRecords = sessionRecords.filter((r) => r.status === 'present')
   const absentRecords = sessionRecords.filter((r) => r.status === 'absent')
-
-  const presentCount = presentRecords.length
   const totalStudents = session?.total_students ?? students.length
 
   const getStudent = (id) => students.find((s) => s.id === id)
@@ -47,6 +45,12 @@ export default function SessionDetailPage() {
   const absentees = absentRecords
     .map((r) => getStudent(r.student_id))
     .filter(Boolean)
+  const absentStudentIds = new Set(absentRecords.map((record) => record.student_id))
+  const presentRecords = students
+    .filter((student) => !absentStudentIds.has(student.id))
+    .slice(0, totalStudents)
+    .map((student) => ({ student_id: student.id, status: 'present' }))
+  const presentCount = Math.max(0, totalStudents - absentees.length)
 
   const subjectName = subject?.name || 'Subject'
   const classInfo = profile ? `${profile.batch}${profile.dept_code}-${profile.section}` : 'Class'
