@@ -12,7 +12,7 @@ export default defineConfig({
         clientsClaim: true,
         cleanupOutdatedCaches: true,
       },
-      includeAssets: ['pwa-icon.svg'],
+      includeAssets: ['favicon-32.png', 'pwa-192.png', 'pwa-512.png'],
       manifest: {
         name: 'Smart CR',
         short_name: 'Smart CR',
@@ -22,9 +22,15 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'pwa-icon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
+            src: 'pwa-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'pwa-512.png',
+            sizes: '512x512',
+            type: 'image/png',
             purpose: 'any maskable'
           }
         ]
