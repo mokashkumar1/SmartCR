@@ -22,6 +22,8 @@ import HomePage from './pages/Home/HomePage'
 function App() {
   const { session, profile, initialized, initAuth } = useAuthStore()
   const { theme } = useThemeStore()
+  // Local UI preview only. Production builds still require normal authentication.
+  const isLocalPreview = import.meta.env.DEV
 
   useEffect(() => {
     initAuth()
@@ -44,7 +46,7 @@ function App() {
   }
 
   // Not logged in
-  if (!session) {
+  if (!session && !isLocalPreview) {
     return (
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -55,7 +57,7 @@ function App() {
   }
 
   // Logged in but no profile yet
-  if (!profile) {
+  if (!profile && !isLocalPreview) {
     return (
       <Routes>
         <Route path="/setup" element={<SetupPage />} />
