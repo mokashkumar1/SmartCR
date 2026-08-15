@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/keep-alive",
+      "schedule": "37 3 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
