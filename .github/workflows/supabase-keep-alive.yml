@@ -2,68 +2,43 @@ name: Supabase Keep Alive
 
 on:
   schedule:
-    # Runs every 3 days at 05:15 UTC to prevent Supabase free plan pausing
-    - cron: "15 5 */3 * *"
-
-  # Allows manual triggering from GitHub Actions tab
+    - cron: "17 1,7,13,19 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-keep-alive
+  cancel-in-progress: false
 
 jobs:
   keep-alive:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
 
     steps:
-      - name: Send database activity request
+      - name: Query Supabase database
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          set -e
+          set -euo pipefail
 
-          if [ -z "$SUPABASE_URL" ]; then
-            echo "ERROR: SUPABASE_URL secret is missing in GitHub Repository Secrets!"
-            echo "Please go to Settings -> Secrets and variables -> Actions and add SUPABASE_URL."
-            exit 1
-          fi
+          : "${SUPABASE_URL:?SUPABASE_URL repository secret is required}"
+          : "${SUPABASE_PUBLISHABLE_KEY:?SUPABASE_PUBLISHABLE_KEY repository secret is required}"
 
-          if [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "ERROR: SUPABASE_ANON_KEY secret is missing in GitHub Repository Secrets!"
-            echo "Please go to Settings -> Secrets and variables -> Actions and add SUPABASE_ANON_KEY."
-            exit 1
-          fi
-
-          # Strip trailing slash from URL if present
-          URL="${SUPABASE_URL%/}"
-
-          echo "Sending keep-alive request to ${URL}/rest/v1/keep_alive..."
-
-          response=$(curl --silent --show-error \
-            --write-out "\n%{http_code}" \
+          curl --fail-with-body --silent --show-error \
+            --retry 4 \
+            --retry-all-errors \
+            --retry-delay 10 \
+            --connect-timeout 15 \
+            --max-time 45 \
             --request POST \
-            "${URL}/rest/v1/keep_alive" \
-            --header "apikey: ${SUPABASE_ANON_KEY}" \
-            --header "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL%/}/rest/v1/rpc/keep_alive" \
+            --header "apikey: ${SUPABASE_PUBLISHABLE_KEY}" \
             --header "Content-Type: application/json" \
-            --header "Prefer: resolution=merge-duplicates,return=minimal" \
-            --data "{\"id\":1,\"checked_at\":\"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"}")
+            --data '{}'
 
-          body=$(echo "$response" | head -n -1)
-          status=$(echo "$response" | tail -n 1)
-
-          echo "HTTP Status: $status"
-
-          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
-            echo "--------------------------------------------------------"
-            echo "ERROR: Supabase keep-alive request failed!"
-            echo "HTTP Status Code: $status"
-            echo "Response Body:"
-            echo "$body"
-            echo "--------------------------------------------------------"
-            echo "Troubleshooting Checklist:"
-            echo "1. Ensure table 'keep_alive' exists in Supabase SQL Editor."
-            echo "2. Ensure RLS policies permit INSERT & UPDATE for 'anon' role."
-            echo "3. Verify SUPABASE_URL and SUPABASE_ANON_KEY secrets in GitHub."
-            exit 1
-          fi
-
-          echo "SUCCESS: Supabase keep-alive request completed successfully."
+          echo
+          echo "Supabase database query completed at $(date -u +'%Y-%m-%dT%H:%M:%SZ')."
