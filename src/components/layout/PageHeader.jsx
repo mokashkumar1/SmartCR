@@ -5,12 +5,12 @@ export default function PageHeader({ title, backTo, showBack = true }) {
   const navigate = useNavigate()
 
   return (
-    <header className="sticky top-0 z-40 bg-surface-bg/90 backdrop-blur-xl border-b border-border">
-      <div className="flex items-center h-[72px] px-4 sm:px-6 gap-3 max-w-5xl mx-auto">
+    <header className="sticky top-0 z-40 bg-surface-bg/[.94] backdrop-blur-xl border-b border-border">
+      <div className="flex items-center min-h-[60px] pt-[env(safe-area-inset-top)] px-4 sm:px-6 gap-3 max-w-5xl mx-auto">
         {showBack && (
           <button
             onClick={() => (backTo ? navigate(backTo) : navigate(-1))}
-            className="p-2 -ml-2 rounded-xl active:scale-90 bg-surface-muted hover:text-primary transition-all text-dark-60"
+            className="h-11 w-11 p-0 -ml-2 rounded-xl active:scale-90 bg-surface-muted hover:text-primary transition-all text-dark-60"
             aria-label="Go back"
           >
             <ArrowLeft size={20} />

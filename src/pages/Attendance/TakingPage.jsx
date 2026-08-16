@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useStudentsStore } from '../../store/studentsStore'
 import { useAttendanceStore } from '../../store/attendanceStore'
@@ -6,237 +6,60 @@ import PageHeader from '../../components/layout/PageHeader'
 import ProgressBar from '../../components/ui/ProgressBar'
 import Button from '../../components/ui/Button'
 import { showToast } from '../../components/ui/Toast'
-import { Undo, Check, X } from 'lucide-react'
-import { motion, useAnimation, useMotionValue, useTransform } from 'framer-motion'
+import { clearDraft, loadDraft, saveDraft, checkpointDraft } from '../../lib/attendanceDraft'
+import { supabase } from '../../lib/supabase'
+import { Undo2, Check, X, Cloud, WifiOff, RotateCcw } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function TakingPage() {
-  const { subjectId } = useParams()
-  const navigate = useNavigate()
-  const { students } = useStudentsStore()
-  const {
-    currentSession,
-    createSession,
-    completeSession,
-    resumeSession,
-    clearCurrentSession,
-    records,
-    fetchRecords,
-  } = useAttendanceStore()
+  const { subjectId } = useParams(); const navigate = useNavigate()
+  const { students, fetchStudents } = useStudentsStore()
+  const { currentSession, createSession, completeSession, resumeSession, clearCurrentSession, fetchRecords } = useAttendanceStore()
+  const [index, setIndex] = useState(0), [statusMap, setStatusMap] = useState({}), [session, setSession] = useState(null)
+  const [loading, setLoading] = useState(true), [saving, setSaving] = useState(false), [online, setOnline] = useState(navigator.onLine), [lastAction, setLastAction] = useState(null), [synced, setSynced] = useState(false)
 
-  const [index, setIndex] = useState(0)
-  const [statusMap, setStatusMap] = useState({})
-  const [session, setSession] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [initDone, setInitDone] = useState(false)
-
-  // Framer motion values
-  const x = useMotionValue(0)
-  const controls = useAnimation()
-  const rotate = useTransform(x, [-200, 200], [-10, 10])
-  const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0.5, 1, 1, 1, 0.5])
-
-  // Background color hints
-  const bgPresentOpacity = useTransform(x, [0, 150], [0, 0.2])
-  const bgAbsentOpacity = useTransform(x, [-150, 0], [0.2, 0])
-
+  useEffect(() => {
+    const connection = () => setOnline(navigator.onLine); window.addEventListener('online', connection); window.addEventListener('offline', connection)
+    return () => { window.removeEventListener('online', connection); window.removeEventListener('offline', connection) }
+  }, [])
   useEffect(() => {
     const init = async () => {
-      if (students.length === 0) {
-        showToast('No students found. Add students first.', 'error')
-        navigate('/students')
-        return
-      }
-
-      if (currentSession && currentSession.subject_id === subjectId && !currentSession.completed) {
-        setSession(currentSession)
-        resumeSession(currentSession)
-        await fetchRecords()
-        const existing = records.filter((r) => r.session_id === currentSession.id)
-        const map = {}
-        existing.forEach((r) => { map[r.student_id] = r.status })
-        setStatusMap(map)
-        const firstUnmarked = students.findIndex((s) => !map[s.id])
-        setIndex(firstUnmarked === -1 ? students.length : firstUnmarked)
-      } else {
-        try {
-          const s = await createSession(subjectId, students.length)
-          setSession(s)
-        } catch (err) {
-          showToast(err.message || 'Failed to start session', 'error')
-          navigate('/')
-        }
-      }
-      setInitDone(true)
-    }
-    init()
+      let roster = students; if (!roster.length) { await fetchStudents(); roster = useStudentsStore.getState().students }
+      if (!roster.length) { showToast('Add students before starting attendance.', 'error'); navigate('/students'); return }
+      try {
+        let active = currentSession?.subject_id === subjectId && !currentSession.completed ? currentSession : await createSession(subjectId, roster.length)
+        setSession(active); resumeSession(active)
+        const draft = loadDraft(active.id); let map = draft?.statusMap || {}
+        if (!draft) { await fetchRecords(active.id); map = Object.fromEntries(useAttendanceStore.getState().records.filter(r => r.session_id === active.id).map(r => [r.student_id, r.status])) }
+        setStatusMap(map); const next = roster.findIndex(student => !map[student.id]); setIndex(next < 0 ? roster.length : next)
+      } catch (error) { showToast(error.message || 'Could not start attendance.', 'error'); navigate('/classes') } finally { setLoading(false) }
+    }; init()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subjectId])
-
+  const persist = useCallback((map) => { if (session) saveDraft(session.id, { subjectId, statusMap: map }) }, [session, subjectId])
   useEffect(() => {
-    if (!session) return
-    const existing = records.filter((r) => r.session_id === session.id)
-    const map = {}
-    existing.forEach((r) => { map[r.student_id] = r.status })
-    setStatusMap((prev) => ({ ...prev, ...map }))
-  }, [records, session])
-
-  const currentStudent = students[index]
-  const markedCount = Object.keys(statusMap).length
-
-  const mark = async (status) => {
-    if (!session || !currentStudent) return
-    const studentId = currentStudent.id
-
-    // Animate out based on status
-    await controls.start({
-      x: status === 'present' ? 300 : -300,
-      opacity: 0,
-      transition: { duration: 0.2 }
-    })
-
-    const nextStatusMap = { ...statusMap, [studentId]: status }
-    setStatusMap(nextStatusMap)
-
-    if (index < students.length - 1) {
-      setIndex((i) => i + 1)
-      // Reset position for next student
-      x.set(0)
-      controls.set({ x: 0, opacity: 1, scale: 0.9 })
-      controls.start({ scale: 1, transition: { type: 'spring', stiffness: 300, damping: 20 } })
-    } else {
-      finishSession(nextStatusMap)
-    }
+    if (!session || !online || !Object.keys(statusMap).length) return
+    setSynced(false)
+    const timer = window.setTimeout(async () => { try { await checkpointDraft(session.id, statusMap, supabase); setSynced(true) } catch { setSynced(false) } }, 1200)
+    return () => window.clearTimeout(timer)
+  }, [session, statusMap, online])
+  const marked = Object.keys(statusMap).length, present = Object.values(statusMap).filter(v => v === 'present').length, absent = marked - present, current = students[index]
+  const mark = useCallback((status) => {
+    if (!session || !current || saving) return
+    const map = { ...statusMap, [current.id]: status }; setStatusMap(map); persist(map); setLastAction({ student: current, status }); navigator.vibrate?.(12)
+    setIndex(value => value >= students.length - 1 ? students.length : value + 1)
+  }, [session, current, saving, statusMap, persist, students.length])
+  const undo = useCallback(() => {
+    if (!lastAction || saving) return
+    const map = { ...statusMap }; delete map[lastAction.student.id]; setStatusMap(map); persist(map); setIndex(value => Math.max(0, value - 1)); setLastAction(null); navigator.vibrate?.(8)
+  }, [lastAction, saving, statusMap, persist])
+  const finish = async () => {
+    if (!session || saving) return; setSaving(true); persist(statusMap)
+    try { await completeSession(session.id, Object.entries(statusMap).filter(([, value]) => value === 'absent').map(([id]) => id)); clearDraft(session.id); clearCurrentSession(); navigate(`/summary/${session.id}`) }
+    catch { showToast(online ? 'Could not save yet. Your work remains safe on this device.' : 'Offline — your attendance is safely saved on this device.', 'error') } finally { setSaving(false) }
   }
-
-  const goBack = () => {
-    if (index > 0) {
-      setIndex((i) => i - 1)
-      const prevStudent = students[index - 1]
-      setStatusMap((prev) => {
-        const next = { ...prev }
-        delete next[prevStudent.id]
-        return next
-      })
-      x.set(0)
-      controls.set({ x: 0, opacity: 0, scale: 0.9 })
-      controls.start({ opacity: 1, scale: 1, transition: { type: 'spring' } })
-    }
-  }
-
-  const finishSession = async (finalStatusMap = statusMap) => {
-    if (!session) return
-    setLoading(true)
-    try {
-      const absentStudentIds = Object.entries(finalStatusMap)
-        .filter(([, status]) => status === 'absent')
-        .map(([studentId]) => studentId)
-      await completeSession(session.id, absentStudentIds)
-      clearCurrentSession()
-      navigate(`/summary/${session.id}`)
-    } catch (err) {
-      showToast(err.message || 'Failed to complete session', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDragEnd = (e, info) => {
-    if (info.offset.x > 100) {
-      mark('present')
-    } else if (info.offset.x < -100) {
-      mark('absent')
-    } else {
-      controls.start({ x: 0, transition: { type: 'spring', stiffness: 300, damping: 20 } })
-    }
-  }
-
-  if (!initDone) {
-    return (
-      <div className="min-h-screen bg-surface-bg flex items-center justify-center">
-        <div className="text-dark-60">Loading...</div>
-      </div>
-    )
-  }
-
-  if (!currentStudent) {
-    return (
-      <div className="min-h-screen bg-surface-bg flex flex-col items-center justify-center px-6 relative overflow-hidden">
-        <div className="text-center relative z-10 bg-surface-card border border-border shadow-card p-8 rounded-xl">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }} className="text-6xl mb-4">🎉</motion.div>
-          <h2 className="text-2xl font-bold text-dark mb-2">All Done!</h2>
-          <p className="text-dark-60 mb-8">{markedCount}/{students.length} students marked</p>
-          <Button size="lg" className="w-full max-w-xs" onClick={() => finishSession()} disabled={loading}>
-            {loading ? 'Saving...' : 'Finish & View Report'}
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-surface-bg flex flex-col relative overflow-hidden">
-      {/* Dynamic Background Overlays */}
-      <motion.div style={{ opacity: bgPresentOpacity }} className="absolute inset-0 bg-status-success pointer-events-none" />
-      <motion.div style={{ opacity: bgAbsentOpacity }} className="absolute inset-0 bg-status-error pointer-events-none" />
-
-      <PageHeader title="Taking Attendance" backTo="/" />
-
-      <div className="flex-1 flex flex-col items-center justify-center px-6 relative z-10">
-        <div className="w-full max-w-sm">
-          <ProgressBar current={markedCount} total={students.length} />
-
-          <motion.div
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.8}
-            onDragEnd={handleDragEnd}
-            style={{ x, rotate, opacity }}
-            animate={controls}
-            className="mt-6 mb-7 sm:mt-12 sm:mb-12 text-center bg-surface-card border border-border shadow-card p-6 sm:p-8 rounded-xl cursor-grab active:cursor-grabbing touch-none"
-          >
-            <div className="text-[32px] font-bold tracking-wider text-dark mb-3 drop-shadow-sm">
-              {currentStudent.roll_number}
-            </div>
-            <div className="text-xl text-dark-60 font-semibold">
-              {currentStudent.name}
-            </div>
-          </motion.div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Button
-              variant="danger"
-              size="giant"
-              onClick={() => mark('absent')}
-              className="rounded-2xl shadow-lg"
-            >
-              <X size={28} className="mr-2" /> ABSENT
-            </Button>
-            <Button
-              variant="success"
-              size="giant"
-              onClick={() => mark('present')}
-              className="rounded-2xl shadow-lg"
-            >
-              <Check size={28} className="mr-2" /> PRESENT
-            </Button>
-          </div>
-
-          <div className="h-12 mt-6 flex justify-center items-center">
-            {index > 0 && (
-              <button
-                onClick={goBack}
-                className="flex items-center gap-2 text-sm text-dark-60 hover:text-dark transition-colors py-2 px-4 rounded-full hover:bg-surface-muted"
-              >
-                <Undo size={16} /> Back to previous
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 pb-8 text-center text-xs text-dark-60 relative z-10 uppercase tracking-widest font-bold">
-        Swipe Right = Present · Swipe Left = Absent
-      </div>
-    </div>
-  )
+  useEffect(() => { const keys = (event) => { if (event.target.matches('input, textarea, select')) return; if (event.key.toLowerCase() === 'p') mark('present'); if (event.key.toLowerCase() === 'a') mark('absent'); if (event.key.toLowerCase() === 'u') undo() }; window.addEventListener('keydown', keys); return () => window.removeEventListener('keydown', keys) })
+  if (loading) return <div className="min-h-[100dvh] grid place-items-center bg-surface-bg"><div className="text-dark-60 animate-pulse">Preparing your class…</div></div>
+  if (!current) return <div className="min-h-[100dvh] bg-surface-bg"><PageHeader title="Ready to finish" backTo="/classes" /><main className="max-w-md mx-auto px-4 pt-8"><section className="premium-card p-6 text-center"><div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-status-success-light text-status-success"><Check size={28}/></div><p className="subtle-label">Attendance complete</p><h1 className="mt-2 text-2xl font-bold text-dark">{students.length} students marked</h1><div className="mt-6 grid grid-cols-3 divide-x divide-border rounded-xl bg-surface-muted py-3"><div><b className="text-lg text-status-success">{present}</b><p className="text-xs text-dark-60">Present</p></div><div><b className="text-lg text-status-error">{absent}</b><p className="text-xs text-dark-60">Absent</p></div><div><b className="text-lg text-dark">{students.length ? Math.round(present / students.length * 100) : 0}%</b><p className="text-xs text-dark-60">Rate</p></div></div><Button size="giant" className="mt-6 w-full" onClick={finish} disabled={saving}>{saving ? 'Saving…' : 'Save & view report'}</Button><button onClick={undo} className="mt-4 min-h-11 text-sm font-semibold text-dark-60"><RotateCcw size={16} className="mr-1 inline"/>Edit last student</button></section></main></div>
+  return <div className="min-h-[100dvh] bg-surface-bg pb-[calc(152px+env(safe-area-inset-bottom))]"><PageHeader title="Take attendance" backTo="/classes"/><main className="mx-auto w-full max-w-lg px-4 pt-5"><div className="flex items-center gap-3"><div className="min-w-0 flex-1"><ProgressBar current={marked} total={students.length}/></div><button onClick={undo} disabled={!lastAction} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-surface-muted text-dark disabled:opacity-35" aria-label="Undo last mark"><Undo2 size={19}/></button></div><div className="mt-3 flex justify-between text-xs font-medium"><span className="text-status-success">{present} present</span><span className="text-status-error">{absent} absent</span><span className="text-dark-60">{students.length-marked} left</span></div><AnimatePresence mode="wait"><motion.article key={current.id} drag="x" dragConstraints={{ left: 0, right: 0 }} onDragEnd={(_, info) => info.offset.x > 90 ? mark('present') : info.offset.x < -90 ? mark('absent') : undefined} initial={{opacity:0,y:10,scale:.98}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:-8,scale:.98}} transition={{duration:.18}} className="premium-card mt-6 min-h-[230px] p-6 flex flex-col justify-center text-center select-none"><p className="subtle-label">Roll number</p><div className="mt-2 break-words text-[clamp(2rem,9vw,3.25rem)] font-bold tracking-[-.04em] text-dark">{current.roll_number}</div><div className="mx-auto my-5 h-px w-12 bg-border"/><p className="text-[clamp(1.15rem,5vw,1.5rem)] font-semibold leading-snug text-dark break-words">{current.name}</p><p className="mt-4 text-xs text-dark-60">Swipe or use the buttons below</p></motion.article></AnimatePresence><div className="mt-4 flex justify-center"><span className="inline-flex items-center gap-1.5 text-xs text-dark-60">{online ? <Cloud size={14}/> : <WifiOff size={14}/>}{online ? (synced ? 'Synced' : 'Saving in background…') : 'Offline · saved on this device'}</span></div></main><div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface-card/[.97] px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] backdrop-blur-xl"><div className="mx-auto grid max-w-lg grid-cols-2 gap-3"><Button variant="danger" size="giant" onClick={() => mark('absent')} className="h-16 rounded-2xl text-base"><X size={22} className="mr-2"/>Absent</Button><Button variant="success" size="giant" onClick={() => mark('present')} className="h-16 rounded-2xl text-base"><Check size={22} className="mr-2"/>Present</Button></div></div></div>
 }

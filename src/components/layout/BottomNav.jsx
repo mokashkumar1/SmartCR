@@ -14,8 +14,8 @@ export default function BottomNav() {
   if (location.pathname === '/login' || location.pathname === '/setup') return null
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-surface-card/95 backdrop-blur-xl border-t border-border z-50 shadow-[0_-12px_35px_rgba(0,0,0,.2)] transition-colors duration-200">
-      <div className="flex items-center justify-around h-[72px] max-w-3xl mx-auto relative px-2 pb-[env(safe-area-inset-bottom)]">
+    <nav aria-label="Primary navigation" className="fixed bottom-0 left-0 right-0 bg-surface-card/[.97] backdrop-blur-xl border-t border-border z-50 shadow-[0_-8px_24px_rgba(0,0,0,.16)] transition-colors duration-200">
+      <div className="flex items-center justify-around h-[64px] max-w-3xl mx-auto relative px-2 pb-[env(safe-area-inset-bottom)]">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = location.pathname === tab.to || (tab.to !== '/' && location.pathname.startsWith(tab.to))
@@ -23,7 +23,8 @@ export default function BottomNav() {
             <NavLink
               key={tab.to}
               to={tab.to}
-              className={`relative flex flex-col items-center justify-center w-full h-full gap-1 transition-all group ${isActive ? 'text-primary' : 'text-dark-60 hover:text-dark'}`}
+              aria-current={isActive ? 'page' : undefined}
+              className={`relative flex flex-col items-center justify-center w-full min-h-[56px] h-full gap-1 transition-all group ${isActive ? 'text-primary' : 'text-dark-60 hover:text-dark'}`}
             >
               {isActive && <span className="absolute top-0 w-12 h-[3px] bg-primary rounded-b-full shadow-[0_0_14px_rgba(255,59,63,.8)]" />}
               <div className="transition-all">
