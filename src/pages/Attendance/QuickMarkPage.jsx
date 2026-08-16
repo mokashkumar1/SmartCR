@@ -77,7 +77,7 @@ export default function QuickMarkPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-bg pb-24">
+    <div className="min-h-[100dvh] bg-surface-bg pb-[calc(96px+env(safe-area-inset-bottom))]">
       <PageHeader title="Quick Mark" backTo="/" />
 
       <div className="px-4 py-3 flex items-center justify-between bg-surface-card border-b border-border shadow-sm">
@@ -131,7 +131,7 @@ export default function QuickMarkPage() {
         })}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-surface-bg/95 backdrop-blur border-t border-border z-50 shadow-card">
+      <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-[calc(16px+env(safe-area-inset-bottom))] bg-surface-bg/95 backdrop-blur border-t border-border z-50 shadow-card">
         <Button size="giant" variant="primary" className="w-full" onClick={handleDone} disabled={loading}>
           {loading ? 'Saving...' : 'Done'}
         </Button>

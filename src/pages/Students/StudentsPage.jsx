@@ -85,14 +85,14 @@ export default function StudentsPage() {
                 <button
                   onClick={() => setEditing(student)}
                   aria-label={`Edit ${student.roll_number} ${student.name}`}
-                  className="p-3 rounded-lg text-dark-60 hover:text-primary hover:bg-surface-muted transition-fast"
+                  className="h-11 w-11 p-0 rounded-lg text-dark-60 hover:text-primary hover:bg-surface-muted transition-fast"
                 >
                   <Pencil size={16} />
                 </button>
                 <button
                   onClick={() => handleDelete(student.id)}
                   aria-label={`Delete ${student.roll_number} ${student.name}`}
-                  className="p-3 rounded-lg text-dark-60 hover:text-status-error hover:bg-surface-muted transition-fast"
+                  className="h-11 w-11 p-0 rounded-lg text-dark-60 hover:text-status-error hover:bg-surface-muted transition-fast"
                 >
                   <Trash2 size={16} />
                 </button>

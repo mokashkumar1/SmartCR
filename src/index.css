@@ -45,6 +45,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .app-shell { @apply min-h-[100dvh] bg-transparent pb-[calc(88px+env(safe-area-inset-bottom))]; }
 .page-wrap { @apply w-full max-w-5xl mx-auto px-4 sm:px-6; }
+.attendance-screen { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+.attendance-screen > header { flex: 0 0 auto; }
+.attendance-main { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.attendance-card { touch-action: none; }
+.attendance-actions { flex: 0 0 auto; }
+@media (max-height: 640px) {
+  .attendance-card { min-height: 185px !important; padding: 1rem !important; margin-top: 1rem !important; }
+  .attendance-card .attendance-divider { margin-top: .75rem !important; margin-bottom: .75rem !important; }
+  .attendance-card .attendance-hint { margin-top: .75rem !important; }
+}
 .premium-card {
   @apply bg-surface-card border border-border rounded-xl shadow-card;
   background-image: linear-gradient(145deg, rgba(255,255,255,.035), transparent 45%);

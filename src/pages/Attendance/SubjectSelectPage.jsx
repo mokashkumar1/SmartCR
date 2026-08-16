@@ -12,7 +12,7 @@ import { showToast } from '../../components/ui/Toast'
 export default function SubjectSelectPage() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
-  const { subjects, fetchSubjects, addSubject, deleteSubject, currentSession, clearCurrentSession } = useAttendanceStore()
+  const { subjects, fetchSubjects, addSubject, deleteSubject, currentSession, clearCurrentSession, deleteSession } = useAttendanceStore()
   const { students, fetchStudents } = useStudentsStore()
   
   const [newSubject, setNewSubject] = useState('')
@@ -69,9 +69,16 @@ export default function SubjectSelectPage() {
     navigate(`/take/${currentSession.subject_id}`)
   }
 
-  const handleDiscard = () => {
-    clearCurrentSession()
-    setShowResume(false)
+  const handleDiscard = async () => {
+    if (!currentSession) return
+    try {
+      await deleteSession(currentSession.id)
+      clearCurrentSession()
+      setShowResume(false)
+      showToast('Unfinished session discarded')
+    } catch (err) {
+      showToast(err.message || 'Could not discard session', 'error')
+    }
   }
 
   const handleDeleteSubject = async (subject) => {
